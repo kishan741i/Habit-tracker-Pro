@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit Tracker Pro - Professional Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        :root { --primary: #4f46e5; --bg: #f3f4f6; }
+        body { background-color: var(--bg); font-family: 'Inter', sans-serif; padding-bottom: 50px; }
+        
+        #welcomeOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; z-index: 2000; display: flex; align-items: center; justify-content: center;
+        }
+
+        .main-content { display: none; padding: 20px; max-width: 800px; margin: 0 auto; }
+        
+        .habit-card { 
+            background: white; border-radius: 12px; margin-bottom: 12px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e5e7eb;
+        }
+        .habit-header { 
+            padding: 15px 20px; cursor: pointer; display: flex; 
+            justify-content: space-between; align-items: center;
+        }
+        .habit-name { font-weight: 700; color: #1f2937; }
+
+        .calendar-container { padding: 15px; border-top: 1px solid #f3f4f6; display: none; }
+        .grid-wrapper {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(35px, 1fr)); gap: 6px;
+        }
+        .day-box {
+            aspect-ratio: 1/1; border: 1px solid #e5e7eb; border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-weight: 600; font-size: 0.8rem;
+        }
+        
+        .status-done { background-color: #10b981 !important; color: white; border-color: #10b981; }
+        .status-missed { background-color: #ef4444 !important; color: white; border-color: #ef4444; }
+
+        .graph-card { background: white; border-radius: 15px; padding: 20px; margin-top: 30px; border: 1px solid #e5e7eb; }
+        
+        /* PDF Export Styling - FULL RESOLUTION */
+        #pdf-export-zone { position: absolute; left: -9999px; top: 0; width: 1100px; }
+        .pdf-page { 
+            background: white; padding: 60px; color: black; width: 1100px; min-height: 1500px; 
+            display: flex; flex-direction: column;
+        }
+        .pdf-header { text-align: center; margin-bottom: 40px; border-bottom: 4px solid #1a1a1a; padding-bottom: 20px; }
+        .pdf-header h1 { font-size: 52px; text-transform: uppercase; font-weight: 900; margin: 0; color: #000; letter-spacing: 2px; }
+        .pdf-header h3 { font-size: 26px; color: #4f46e5; margin-top: 10px; font-weight: bold; }
+
+        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 17px; }
+        .pdf-table th, .pdf-table td { border: 2px solid #333; padding: 12px; text-align: center; vertical-align: middle; word-wrap: break-word; }
+        .pdf-table th { background-color: #1a1a1a; color: white; text-transform: uppercase; font-size: 18px; }
+        .pdf-table td:first-child { text-align: left; font-weight: 900; font-size: 19px; background-color: #f9fafb; }
+        .text-success-days { color: #059669; font-weight: bold; }
+        .text-pending-days { color: #dc2626; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="welcomeOverlay">
+    <div class="card p-5 shadow border-0 text-center" style="width: 350px;">
+        <h3 class="fw-bold mb-3">Habit Tracker</h3>
+        <input type="text" id="userNameInput" class="form-control mb-3 text-center" placeholder="Your Name">
+        <button class="btn btn-primary w-100 fw-bold" onclick="saveName()">Start</button>
+    </div>
+</div>
+
+<div class="main-content" id="mainApp">
+    <div class="header-section text-center mb-4">
+        <h2 id="displayGreeting" class="fw-bold text-primary">Hello!</h2>
+        <div class="d-flex justify-content-center gap-2 mt-2">
+            <span id="displayDate" class="badge bg-dark px-3 py-2">Date</span>
+            <button id="changeDateBtn" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#dateModal">Change Month</button>
+        </div>
+    </div>
+
+    <div class="input-group mb-4 shadow-sm">
+        <input type="text" id="habitInput" class="form-control" placeholder="New Habit Name">
+        <button class="btn btn-primary px-4 fw-bold" onclick="addHabit()">Add</button>
+    </div>
+
+    <div id="habitList"></div>
+
+    <div class="graph-card shadow-sm">
+        <h5 class="fw-bold mb-3 text-muted text-center">Monthly Performance</h5>
+        <div style="height: 300px;"><canvas id="progressChart"></canvas></div>
+    </div>
+
+    <div class="text-center mt-5">
+        <button class="btn btn-success btn-lg shadow-sm fw-bold px-5" onclick="exportToPDF()">
+            📥 Export Professional PDF Report
+        </button>
+    </div>
+</div>
+
+<div class="modal fade" id="dateModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content shadow">
+            <div class="modal-body">
+                <div class="form-check mb-2"><input class="form-check-input" type="radio" name="dateMode" id="modeCurrent" checked onchange="toggleDateInputs()"><label class="form-check-label" for="modeCurrent">Current Month</label></div>
+                <div class="form-check mb-3"><input class="form-check-input" type="radio" name="dateMode" id="modeEdit" onchange="toggleDateInputs()"><label class="form-check-label" for="modeEdit">Manual Edit</label></div>
+                <div id="manualInputs" style="display: none;">
+                    <input type="number" id="selectYear" class="form-control mb-2" value="2026">
+                    <select id="selectMonth" class="form-select">
+                        <option value="0">Jan</option><option value="1">Feb</option><option value="2">Mar</option>
+                        <option value="3">Apr</option><option value="4">May</option><option value="5">Jun</option>
+                        <option value="6">Jul</option><option value="7">Aug</option><option value="8">Sep</option>
+                        <option value="9">Oct</option><option value="10">Nov</option><option value="11">Dec</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary w-100 mt-3" onclick="applyDate()">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="pdf-export-zone"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let userName = localStorage.getItem('h_name');
+    let habits = JSON.parse(localStorage.getItem('h_data')) || [];
+    const today = new Date(); 
+    let curYear = today.getFullYear();
+    let curMonth = today.getMonth();
+    let chartInstance = null;
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    function init() { if (userName) showApp(); updateDateLabel(); }
+    function saveName() { const val = document.getElementById('userNameInput').value.trim(); if (val) { localStorage.setItem('h_name', val); userName = val; showApp(); } }
+    function showApp() { document.getElementById('welcomeOverlay').style.display = 'none'; document.getElementById('mainApp').style.display = 'block'; document.getElementById('displayGreeting').innerText = `Hello, ${userName}!`; renderHabits(); renderChart(); }
+    function toggleDateInputs() { document.getElementById('manualInputs').style.display = document.getElementById('modeEdit').checked ? 'block' : 'none'; }
+
+    function applyDate() {
+        if (document.getElementById('modeCurrent').checked) { curYear = today.getFullYear(); curMonth = today.getMonth(); } 
+        else { curYear = parseInt(document.getElementById('selectYear').value); curMonth = parseInt(document.getElementById('selectMonth').value); }
+        updateDateLabel(); renderHabits(); renderChart();
+        bootstrap.Modal.getInstance(document.getElementById('dateModal')).hide();
+    }
+
+    function updateDateLabel() { document.getElementById('displayDate').innerText = `${monthNames[curMonth]} ${curYear}`; }
+    function addHabit() { const input = document.getElementById('habitInput'); if (!input.value.trim()) return; habits.push({ name: input.value.trim(), history: {} }); input.value = ""; saveData(); }
+    function saveData() { localStorage.setItem('h_data', JSON.stringify(habits)); renderHabits(); renderChart(); }
+    function deleteHabit(idx) { if (confirm("Delete habit?")) { habits.splice(idx, 1); saveData(); } }
+
+    function renderHabits() {
+        const list = document.getElementById('habitList'); list.innerHTML = "";
+        const days = new Date(curYear, curMonth + 1, 0).getDate();
+        const key = `${curYear}-${curMonth}`;
+        habits.forEach((habit, hIdx) => {
+            const card = document.createElement('div'); card.className = "habit-card";
+            card.innerHTML = `<div class="habit-header" onclick="toggleCal(${hIdx})"><span class="habit-name">${habit.name}</span><button class="btn btn-sm text-danger" onclick="event.stopPropagation(); deleteHabit(${hIdx})">Delete</button></div>
+                <div class="calendar-container" id="cal-${hIdx}"><div class="grid-wrapper" id="grid-${hIdx}"></div></div>`;
+            list.appendChild(card);
+            const grid = document.getElementById(`grid-${hIdx}`);
+            for (let d = 1; d <= days; d++) {
+                const box = document.createElement('div'); box.className = 'day-box'; box.innerText = d;
+                const status = (habit.history[key] && habit.history[key][d]) || '';
+                if (status === 'done') box.classList.add('status-done'); else if (status === 'missed') box.classList.add('status-missed');
+                box.onclick = () => { if (!habit.history[key]) habit.history[key] = {}; const s = habit.history[key][d]; habit.history[key][d] = s === 'done' ? 'missed' : (s === 'missed' ? null : 'done'); saveData(); };
+                grid.appendChild(box);
+            }
+        });
+    }
+
+    function toggleCal(idx) { const el = document.getElementById(`cal-${idx}`); const isOpen = el.style.display === "block"; document.querySelectorAll('.calendar-container').forEach(c => c.style.display = 'none'); el.style.display = isOpen ? "none" : "block"; }
+
+    function getChartData(y, m) {
+        const days = new Date(y, m + 1, 0).getDate();
+        const key = `${y}-${m}`;
+        let dailyCounts = new Array(days).fill(0);
+        habits.forEach(h => { if (h.history[key]) { for (let d = 1; d <= days; d++) if (h.history[key][d] === 'done') dailyCounts[d-1]++; } });
+        return dailyCounts;
+    }
+
+    function renderChart() {
+        const ctx = document.getElementById('progressChart').getContext('2d');
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: { labels: Array.from({length: new Date(curYear, curMonth+1,0).getDate()}, (_, i) => i + 1), datasets: [{ label: 'Completed', data: getChartData(curYear, curMonth), borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', fill: true, tension: 0.3 }] },
+            options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: habits.length > 0 ? habits.length : 5, ticks: { stepSize: 1 } } } }
+        });
+    }
+
+    // --- REVISED PDF EXPORT (FULL RESOLUTION, NO MONTH COLUMN) ---
+    async function exportToPDF() {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const exportZone = document.getElementById('pdf-export-zone');
+        exportZone.innerHTML = "";
+
+        let activeMonths = [];
+        habits.forEach(h => {
+            Object.keys(h.history).forEach(key => {
+                const hasData = Object.values(h.history[key]).some(v => v === 'done' || v === 'missed');
+                if (hasData && !activeMonths.includes(key)) activeMonths.push(key);
+            });
+        });
+
+        if (activeMonths.length === 0) { alert("No tracking data available!"); return; }
+        activeMonths.sort(); 
+
+        for (let i = 0; i < activeMonths.length; i++) {
+            const [y, m] = activeMonths[i].split('-').map(Number);
+            const canvasId = `pdf-canvas-${i}`;
+            
+            const pageDiv = document.createElement('div');
+            pageDiv.className = "pdf-page";
+            pageDiv.innerHTML = `
+                <div class="pdf-header">
+                    <h1>${userName}</h1>
+                    <h3>Performance Report: ${monthNames[m]} ${y}</h3>
+                </div>
+                <div style="width:100%; height:480px; padding:20px; border:4px solid #1a1a1a; margin-bottom:40px; border-radius:15px;">
+                    <canvas id="${canvasId}" width="950" height="440"></canvas>
+                </div>
+                <table class="pdf-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 30%">Task Name</th>
+                            <th style="width: 35%">Completed Date</th>
+                            <th style="width: 35%">Pending Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="details-${i}"></tbody>
+                </table>
+            `;
+            exportZone.appendChild(pageDiv);
+
+            const pdfCtx = document.getElementById(canvasId).getContext('2d');
+            const data = getChartData(y, m);
+            new Chart(pdfCtx, {
+                type: 'line',
+                data: { 
+                    labels: Array.from({length: data.length}, (_, idx) => idx + 1), 
+                    datasets: [{ data: data, borderColor: '#4f46e5', borderWidth: 6, pointRadius: 7, fill: true, backgroundColor: 'rgba(79, 70, 229, 0.08)' }] 
+                },
+                options: { 
+                    responsive: false, animation: false,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { ticks: { font: { size: 22, weight: 'bold' } }, grid: { lineWidth: 2, color: '#ddd' } },
+                        x: { ticks: { font: { size: 20, weight: 'bold' } }, grid: { lineWidth: 2, color: '#ddd' } }
+                    }
+                }
+            });
+
+            const detailsBody = document.getElementById(`details-${i}`);
+            habits.forEach(h => {
+                const doneDays = []; const missedDays = [];
+                const monthKey = `${y}-${m}`;
+                if (h.history[monthKey]) {
+                    Object.keys(h.history[monthKey]).forEach(d => {
+                        if (h.history[monthKey][d] === 'done') doneDays.push(d);
+                        else if (h.history[monthKey][d] === 'missed') missedDays.push(d);
+                    });
+                }
+                if (doneDays.length > 0 || missedDays.length > 0) {
+                    detailsBody.innerHTML += `
+                        <tr>
+                            <td>${h.name}</td>
+                            <td class="text-success-days">${doneDays.sort((a,b)=>a-b).join(' , ') || '-'}</td>
+                            <td class="text-pending-days">${missedDays.sort((a,b)=>a-b).join(' , ') || '-'}</td>
+                        </tr>`;
+                }
+            });
+
+            const canvas = await html2canvas(pageDiv, { scale: 2 });
+            const imgData = canvas.toDataURL('image/png');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            
+            if (i > 0) pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        }
+
+        pdf.save(`${userName.toUpperCase()}_REPORT.pdf`);
+        exportZone.innerHTML = ""; 
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
