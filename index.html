@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Habit Tracker Pro</title>
+    <title>Habit Tracker Pro | Dark Edition</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -11,56 +11,74 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
-        :root { --primary: #4f46e5; --bg: #f3f4f6; }
-        body { background-color: var(--bg); font-family: 'Inter', sans-serif; padding-bottom: 50px; }
+        :root { 
+            --primary: #6366f1; 
+            --bg: #0f172a; 
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        body { 
+            background-color: var(--bg); 
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif; 
+            padding-bottom: 50px; 
+        }
         
         /* --- Toast Notification Styles --- */
         .toast-container { position: fixed; top: 25px; right: 30px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .custom-toast { border-radius: 12px; background: #fff; padding: 15px 25px; box-shadow: 0 5px 10px rgba(0,0,0,0.1); border-left: 6px solid var(--primary); overflow: hidden; display: flex; align-items: center; position: relative; transform: translateX(calc(100% + 40px)); transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.35); }
+        .custom-toast { border-radius: 12px; background: var(--card-bg); padding: 15px 25px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); border-left: 6px solid var(--primary); overflow: hidden; display: flex; align-items: center; position: relative; transform: translateX(calc(100% + 40px)); transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.35); color: var(--text-main); }
         .custom-toast.active { transform: translateX(0%); }
         .toast-content { display: flex; align-items: center; }
         .toast-content .icon { display: flex; align-items: center; justify-content: center; height: 35px; width: 35px; background-color: var(--primary); color: #fff; font-size: 18px; border-radius: 50%; }
         .toast-content .message { display: flex; flex-direction: column; margin: 0 15px; }
-        .message .text { font-size: 14px; color: #666; }
-        .message .text-1 { font-weight: 600; color: #333; font-size: 16px; }
-        .custom-toast .close { position: absolute; top: 5px; right: 10px; cursor: pointer; opacity: 0.5; }
-        .custom-toast .progress-bar { position: absolute; bottom: 0; left: 0; height: 3px; width: 100%; background: #ddd; }
+        .message .text { font-size: 14px; color: var(--text-dim); }
+        .message .text-1 { font-weight: 600; color: var(--text-main); font-size: 16px; }
+        .custom-toast .close { position: absolute; top: 5px; right: 10px; cursor: pointer; opacity: 0.5; color: white; }
+        .custom-toast .progress-bar { position: absolute; bottom: 0; left: 0; height: 3px; width: 100%; background: #334155; }
         .custom-toast .progress-bar:before { content: ''; position: absolute; bottom: 0; right: 0; height: 100%; width: 100%; background-color: var(--primary); }
         .custom-toast.active .progress-bar:before { animation: toastProgress 3s linear forwards; }
         @keyframes toastProgress { 100% { right: 100%; } }
 
         /* --- Skeleton Loading Styles --- */
-        #skeletonLoader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f8f9fa; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .skele-shimmer { background: #eeeeee; background-image: linear-gradient(to right, #eeeeee 0%, #dddddd 20%, #eeeeee 40%, #eeeeee 100%); background-repeat: no-repeat; background-size: 800px 100%; animation: shimmer 1.5s linear infinite; border-radius: 6px; display: block; }
+        #skeletonLoader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .skele-shimmer { background: #1e293b; background-image: linear-gradient(to right, #1e293b 0%, #334155 20%, #1e293b 40%, #1e293b 100%); background-repeat: no-repeat; background-size: 800px 100%; animation: shimmer 1.5s linear infinite; border-radius: 6px; display: block; }
         @keyframes shimmer { 0% { background-position: -800px 0; } 100% { background-position: 800px 0; } }
-        .welcome-skele { width: 350px; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; }
+        .welcome-skele { width: 350px; background: var(--card-bg); padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; }
         .home-skele { width: 90%; max-width: 800px; display: none; margin-top: -100px; }
-        .skele-card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e5e7eb; }
+        .skele-card { background: var(--card-bg); padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--border); }
 
         /* --- App Styles --- */
-        #welcomeOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: none; align-items: center; justify-content: center; }
+        #welcomeOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 2000; display: none; align-items: center; justify-content: center; }
+        .welcome-card { background: var(--card-bg) !important; border: 1px solid var(--border) !important; color: var(--text-main); }
+        .form-control, .form-select { background-color: #0f172a !important; border: 1px solid var(--border) !important; color: white !important; }
+        .form-control::placeholder { color: #64748b; }
+        
         .main-content { display: none; padding: 20px; max-width: 800px; margin: 0 auto; }
-        .habit-card { background: white; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
+        .habit-card { background: var(--card-bg); border-radius: 12px; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); border: 1px solid var(--border); }
         .habit-header { padding: 15px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .habit-name { font-weight: 700; color: #1f2937; }
-        .calendar-container { padding: 15px; border-top: 1px solid #f3f4f6; display: none; }
+        .habit-name { font-weight: 700; color: var(--text-main); }
+        .calendar-container { padding: 15px; border-top: 1px solid var(--border); display: none; background: #1a2232; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
         .grid-wrapper { display: grid; grid-template-columns: repeat(auto-fill, minmax(35px, 1fr)); gap: 6px; }
-        .day-box { aspect-ratio: 1/1; border: 1px solid #e5e7eb; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: 600; font-size: 0.8rem; }
-        .status-done { background-color: #10b981 !important; color: white; border-color: #10b981; }
-        .status-missed { background-color: #ef4444 !important; color: white; border-color: #ef4444; }
-        .graph-card { background: white; border-radius: 15px; padding: 20px; margin-top: 30px; border: 1px solid #e5e7eb; }
+        .day-box { aspect-ratio: 1/1; border: 1px solid var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: 600; font-size: 0.8rem; background: #0f172a; color: var(--text-dim); }
+        .status-done { background-color: var(--success) !important; color: white; border-color: var(--success); box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
+        .status-missed { background-color: var(--danger) !important; color: white; border-color: var(--danger); box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+        
+        .graph-card { background: var(--card-bg); border-radius: 15px; padding: 20px; margin-top: 30px; border: 1px solid var(--border); }
+        .modal-content { background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); }
+        
         #pdf-export-zone { position: absolute; left: -9999px; top: 0; width: 1100px; }
         .pdf-page { background: white; padding: 60px; color: black; width: 1100px; min-height: 1500px; display: flex; flex-direction: column; }
-        .pdf-header { text-align: center; margin-bottom: 40px; border-bottom: 4px solid #1a1a1a; padding-bottom: 20px; }
-        .pdf-header h1 { font-size: 52px; text-transform: uppercase; font-weight: 900; margin: 0; color: #000; letter-spacing: 2px; }
-        .pdf-header h3 { font-size: 26px; color: #4f46e5; margin-top: 10px; font-weight: bold; }
-        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 17px; }
-        .pdf-table th, .pdf-table td { border: 2px solid #333; padding: 12px; text-align: center; vertical-align: middle; word-wrap: break-word; }
-        .pdf-table th { background-color: #1a1a1a; color: white; text-transform: uppercase; font-size: 18px; }
-        .pdf-table td:first-child { text-align: left; font-weight: 900; font-size: 19px; background-color: #f9fafb; }
-        .text-success-days { color: #059669; font-weight: bold; }
-        .text-pending-days { color: #dc2626; font-weight: bold; }
-        .btn-action { padding: 12px; font-weight: bold; }
+        
+        .btn-primary { background-color: var(--primary); border: none; }
+        .btn-primary:hover { background-color: #4f46e5; }
+        .btn-outline-secondary { color: var(--text-dim); border-color: var(--border); }
+        .badge.bg-dark { background-color: #334155 !important; }
+        .text-primary { color: var(--primary) !important; }
     </style>
 </head>
 <body>
@@ -86,7 +104,7 @@
 </div>
 
 <div id="welcomeOverlay">
-    <div class="card p-5 shadow border-0 text-center" style="width: 350px;">
+    <div class="card p-5 shadow border-0 text-center welcome-card" style="width: 350px;">
         <h3 class="fw-bold mb-3">Habit Tracker</h3>
         <input type="text" id="userNameInput" class="form-control mb-3 text-center" placeholder="Your Name">
         <button class="btn btn-primary w-100 fw-bold" onclick="saveName()">Start</button>
@@ -115,13 +133,13 @@
     </div>
     
     <div class="mt-5 d-flex flex-column gap-2">
-        <button class="btn btn-outline-success btn-lg btn-action w-100" onclick="exportToPDF()">Export Professional PDF Report</button>
+        <button class="btn btn-outline-success btn-lg fw-bold w-100" onclick="exportToPDF()">Export Professional PDF Report</button>
         <div class="d-flex gap-2">
-            <button class="btn btn-outline-primary btn-action w-50" onclick="exportBackup()">Export Backup</button>
-            <button class="btn btn-outline-secondary btn-action w-50" onclick="document.getElementById('importFile').click()">Import Backup</button>
+            <button class="btn btn-outline-primary fw-bold w-50" onclick="exportBackup()">Export Backup</button>
+            <button class="btn btn-outline-secondary fw-bold w-50" onclick="document.getElementById('importFile').click()">Import Backup</button>
             <input type="file" id="importFile" hidden accept=".json" onchange="importBackup(event)">
         </div>
-        <button class="btn btn-outline-danger btn-lg btn-action w-100" onclick="clearAllData()">Clear All Data</button>
+        <button class="btn btn-outline-danger btn-lg fw-bold w-100" onclick="clearAllData()">Clear All Data</button>
     </div>
 </div>
 
@@ -158,13 +176,12 @@
     let chartInstance = null;
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-    // --- Toast Function ---
     function showToast(title, message, type = 'success') {
         const container = document.getElementById('toastContainer');
         const toast = document.createElement('div');
         toast.className = `custom-toast`;
         const icon = type === 'success' ? 'fa-check' : (type === 'error' ? 'fa-xmark' : 'fa-info');
-        const color = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : '#4f46e5');
+        const color = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : '#6366f1');
         toast.style.borderLeftColor = color;
         toast.innerHTML = `<div class="toast-content"><div class="icon" style="background-color: ${color}"><i class="fa-solid ${icon}"></i></div><div class="message"><span class="text text-1">${title}</span><span class="text text-2">${message}</span></div></div><i class="fa-solid fa-xmark close" onclick="this.parentElement.remove()"></i><div class="progress-bar"></div>`;
         container.appendChild(toast);
@@ -185,7 +202,7 @@
             document.getElementById('skeletonLoader').style.display = 'none';
             if (userName) {
                 showApp();
-                showToast("Welcome Back", `Hello ${userName}, let's track today!`); // Notification on Welcome back
+                showToast("Welcome Back", `Hello ${userName}, let's track today!`); 
             } else {
                 document.getElementById('welcomeOverlay').style.display = 'flex';
             }
@@ -205,7 +222,7 @@
             setTimeout(() => {
                 document.getElementById('skeletonLoader').style.display = 'none';
                 showApp();
-                showToast("Welcome!", `Profile created for ${userName}.`); // Notification on New User Welcome
+                showToast("Welcome!", `Profile created for ${userName}.`); 
             }, 2000); 
         }
     }
@@ -225,7 +242,7 @@
         else { curYear = parseInt(document.getElementById('selectYear').value); curMonth = parseInt(document.getElementById('selectMonth').value); }
         updateDateLabel(); renderHabits(); renderChart();
         bootstrap.Modal.getInstance(document.getElementById('dateModal')).hide();
-        showToast("Date Changed", `Viewing data for ${monthNames[curMonth]} ${curYear}`, "info"); // Notification on Date Change
+        showToast("Date Changed", `Viewing data for ${monthNames[curMonth]} ${curYear}`, "info"); 
     }
 
     function updateDateLabel() { document.getElementById('displayDate').innerText = `${monthNames[curMonth]} ${curYear}`; }
@@ -237,7 +254,7 @@
         habits.push({ name: name, history: {} }); 
         input.value = ""; 
         saveData(); 
-        showToast("Habit Added", `"${name}" has been added.`); // Notification on Habit Add
+        showToast("Habit Added", `"${name}" has been added.`); 
     }
 
     function saveData() { localStorage.setItem('h_data', JSON.stringify(habits)); renderHabits(); renderChart(); }
@@ -279,22 +296,33 @@
         if (chartInstance) chartInstance.destroy();
         chartInstance = new Chart(ctx, {
             type: 'line',
-            data: { labels: Array.from({length: data.length}, (_, i) => i + 1), datasets: [{ label: 'Completed', data: data, borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', fill: true, tension: 0.3 }] },
+            data: { labels: Array.from({length: data.length}, (_, i) => i + 1), datasets: [{ label: 'Completed', data: data, borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)', fill: true, tension: 0.3 }] },
             options: { 
                 responsive: true, maintainAspectRatio: false, 
                 interaction: { mode: 'index', intersect: false }, 
-                scales: { y: { beginAtZero: true, max: habits.length > 0 ? habits.length : 5, ticks: { stepSize: 1, precision: 0 } } },
+                scales: { 
+                    y: { 
+                        beginAtZero: true, 
+                        max: habits.length > 0 ? habits.length : 5, 
+                        ticks: { color: '#94a3b8', stepSize: 1 },
+                        grid: { color: '#334155' }
+                    },
+                    x: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { display: false }
+                    }
+                },
                 plugins: { 
+                    legend: { labels: { color: '#f8fafc' } },
                     tooltip: { 
+                        backgroundColor: '#1e293b',
+                        titleColor: '#f8fafc',
+                        bodyColor: '#f8fafc',
                         callbacks: { 
-                            // Graph logic: Show "No data found" for future dates
                             label: function(context) { 
                                 const labelDay = parseInt(context.label);
                                 const hoverDate = new Date(curYear, curMonth, labelDay);
-                                if (hoverDate > today) {
-                                    return "No data found.";
-                                }
-                                return `Tasks: ${context.raw}`;
+                                return hoverDate > today ? "No data found." : `Tasks: ${context.raw}`;
                             } 
                         } 
                     } 
@@ -324,7 +352,7 @@
                     habits = importedJSON.habits;
                     if(importedJSON.name) { userName = importedJSON.name; localStorage.setItem('h_name', userName); }
                     saveData(); 
-                    showToast("Import Success", "Your backup has been loaded.", "success"); // Notification on Import Backup
+                    showToast("Import Success", "Your backup has been loaded.", "success"); 
                     setTimeout(() => location.reload(), 1500);
                 }
             } catch (err) { alert("Error reading file."); }
@@ -333,7 +361,7 @@
     }
 
     async function exportToPDF() {
-        showToast("Generating PDF", "Please wait while we prepare your report...", "info"); // Notification on PDF generation start
+        showToast("Generating PDF", "Please wait while we prepare your report...", "info"); 
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
         const exportZone = document.getElementById('pdf-export-zone');
@@ -351,21 +379,29 @@
             const canvasId = `pdf-canvas-${i}`;
             const pageDiv = document.createElement('div');
             pageDiv.className = "pdf-page";
-            pageDiv.innerHTML = `<div class="pdf-header"><h1>${userName}</h1><h3>Report: ${monthNames[m]} ${y}</h3></div>
+            pageDiv.innerHTML = `<div class="pdf-header" style="text-align: center; margin-bottom: 40px; border-bottom: 4px solid #1a1a1a; padding-bottom: 20px;">
+                <h1 style="font-size: 52px; text-transform: uppercase; font-weight: 900; margin: 0; color: #000;">${userName}</h1>
+                <h3 style="font-size: 26px; color: #4f46e5; margin-top: 10px; font-weight: bold;">Report: ${monthNames[m]} ${y}</h3>
+                </div>
                 <div style="width:100%; height:480px; padding:20px; border:4px solid #1a1a1a; margin-bottom:40px; border-radius:15px;"><canvas id="${canvasId}" width="950" height="440"></canvas></div>
-                <table class="pdf-table"><thead><tr><th>Task Name</th><th>Completed</th><th>Pending</th></tr></thead><tbody id="details-${i}"></tbody></table>`;
+                <table style="width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 17px;">
+                    <thead><tr style="background-color: #1a1a1a; color: white;">
+                        <th style="border: 2px solid #333; padding: 12px;">Task Name</th>
+                        <th style="border: 2px solid #333; padding: 12px;">Completed</th>
+                        <th style="border: 2px solid #333; padding: 12px;">Pending</th>
+                    </tr></thead>
+                    <tbody id="details-${i}"></tbody>
+                </table>`;
             exportZone.appendChild(pageDiv);
+            
             const data = getChartData(y, m);
             const pdfCtx = document.getElementById(canvasId).getContext('2d');
             new Chart(pdfCtx, {
                 type: 'line',
                 data: { labels: Array.from({length: data.length}, (_, idx) => idx + 1), datasets: [{ data: data, borderColor: '#4f46e5', borderWidth: 6, pointRadius: 7, fill: true, backgroundColor: 'rgba(79, 70, 229, 0.08)' }] },
-                options: { 
-                    responsive: false, animation: false,
-                    scales: { y: { beginAtZero: true, suggestedMax: habits.length, ticks: { font: { size: 22 }, stepSize: 1 } } },
-                    plugins: { legend: { display: false } }
-                }
+                options: { responsive: false, animation: false, scales: { y: { beginAtZero: true, suggestedMax: habits.length, ticks: { font: { size: 22 }, stepSize: 1 } } }, plugins: { legend: { display: false } } }
             });
+            
             const detailsBody = document.getElementById(`details-${i}`);
             habits.forEach(h => {
                 const done = []; const missed = [];
@@ -376,7 +412,11 @@
                     });
                 }
                 if (done.length || missed.length) {
-                    detailsBody.innerHTML += `<tr><td>${h.name}</td><td class="text-success-days">${done.sort((a,b)=>a-b).join(', ') || '-'}</td><td class="text-pending-days">${missed.sort((a,b)=>a-b).join(', ') || '-'}</td></tr>`;
+                    detailsBody.innerHTML += `<tr>
+                        <td style="border: 2px solid #333; padding: 12px; font-weight: 900; background: #f9fafb;">${h.name}</td>
+                        <td style="border: 2px solid #333; padding: 12px; color: #059669; font-weight: bold; text-align:center;">${done.sort((a,b)=>a-b).join(', ') || '-'}</td>
+                        <td style="border: 2px solid #333; padding: 12px; color: #dc2626; font-weight: bold; text-align:center;">${missed.sort((a,b)=>a-b).join(', ') || '-'}</td>
+                    </tr>`;
                 }
             });
             const canvas = await html2canvas(pageDiv, { scale: 2 });
